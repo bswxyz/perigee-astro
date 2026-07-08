@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<script>document.documentElement.classList.add('js')</script>
+<title>Perigee — a shared live sky</title>
+<meta name="description" content="Perigee is a citizen-astronomy telescope network. Point a smart scope at the dark, plate-solve, and everyone on the node sees what you see. A deep-space starfield you can steer." />
+<meta name="theme-color" content="#05060a" />
+<meta name="color-scheme" content="dark" />
+<meta property="og:title" content="Perigee — a shared live sky" />
+<meta property="og:description" content="Point at the dark. Everyone sees what you see. A citizen-astronomy telescope network." />
+<meta property="og:type" content="website" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;1,6..72,300;1,6..72,400&family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="./styles.css" />
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
+</script>
+</head>
+<body>
+<!-- decorative deep-space layers (below content) -->
+<canvas class="sky" aria-hidden="true"></canvas>
+<div class="sky-fallback" aria-hidden="true"></div>
+<div class="nebula nebula-teal" aria-hidden="true"></div>
+<div class="nebula nebula-violet" aria-hidden="true"></div>
+<div class="vignette" aria-hidden="true"></div>
+
+<header class="nav">
+  <a class="brand" href="./" aria-label="Perigee home">
+    <span class="brand-mark" aria-hidden="true">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.4">
+        <circle cx="12" cy="12" r="9.2"/><path d="M12 2.8v3M12 18.2v3M2.8 12h3M18.2 12h3"/>
+        <path d="M12 12 L15.4 6.4" stroke-width="1.8"/><circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none"/>
+      </svg>
+    </span>
+    <span class="brand-word">Perigee</span>
+  </a>
+  <nav class="nav-links" aria-label="Primary">
+    <a href="#console">Tonight</a>
+    <a href="#network">Network</a>
+    <a href="#observations">Observations</a>
+    <a href="./guide/">Guide</a>
+    <a class="nav-cta" href="#join">Request a node</a>
+  </nav>
+</header>
+
+<main>
+  <!-- ============ HERO ============ -->
+  <section class="hero">
+    <p class="eyebrow reveal">Citizen astronomy · a shared live sky</p>
+    <h1 class="hero-title">
+      <span class="line"><span>Point at the dark.</span></span>
+      <span class="line"><span><em>Everyone sees</em> what you see.</span></span>
+    </h1>
+    <p class="hero-sub reveal">Perigee is a network of internet-connected smart telescopes. Aim one at a
+      faint smudge in Sagittarius, let the sky plate-solve and lock, and the whole node watches the same
+      photons arrive — from a rooftop in Lisbon, a plateau in the Karoo, a bothy in the Cairngorms.
+      One sky, pointed together.</p>
+    <div class="hero-actions reveal">
+      <a class="btn btn-primary" href="#console">Steer the sky ↴</a>
+      <a class="btn btn-ghost" href="#network">See the network</a>
+    </div>
+
+    <!-- persistent "tonight" status band (Moonlitt pattern) -->
+    <div class="tonight reveal" role="status" aria-live="off" aria-label="Tonight across the network">
+      <span class="t-dot" aria-hidden="true"></span>
+      <span class="t-item"><span class="t-k">Observers online</span><span class="t-v" id="tObs">—</span></span>
+      <span class="t-item"><span class="t-k">Moon</span><span class="t-v" id="tMoon">waning · 34%</span></span>
+      <span class="t-item"><span class="t-k">Seeing</span><span class="t-v" id="tSeeing">1.8″</span></span>
+      <span class="t-item"><span class="t-k">Sidereal</span><span class="t-v" id="tLst">—</span></span>
+      <span class="t-item t-transit"><span class="t-k">Now transiting</span><span class="t-v" id="tTransit">M13 · Hercules</span></span>
+    </div>
+  </section>
+
+  <!-- ============ CONSOLE — point-your-scope interactive (Pattern C + A) ============ -->
+  <section id="console" class="console">
+    <div class="section-head">
+      <p class="kicker reveal">[ Tonight · steer the sky ]</p>
+      <h2 class="reveal">Sweep the reticle. The network locks on.</h2>
+      <p class="lede reveal">This is the live viewport a Perigee operator sees. Move your pointer across the
+        field — or use the arrow keys — and the nearest catalogued object plate-solves and locks. Coordinates
+        are computed for right now; the card is exactly what a node broadcasts to everyone watching.</p>
+    </div>
+
+    <div class="console-grid reveal">
+      <figure class="viewport" aria-label="Interactive sky viewport. Move the pointer or use arrow keys to sweep the reticle across catalogued deep-sky objects.">
+        <canvas id="scope" width="900" height="640"></canvas>
+        <div class="vp-hud" aria-hidden="true">
+          <span class="vp-corner tl"></span><span class="vp-corner tr"></span>
+          <span class="vp-corner bl"></span><span class="vp-corner br"></span>
+          <span class="vp-status" id="vpStatus">SEARCHING</span>
+          <span class="vp-fov">FOV 1.4° × 1.0°</span>
+        </div>
+        <button class="vp-reticle-hit" id="scopeHit" type="button"
+          aria-label="Sky viewport — sweep to lock onto an object. Arrow keys nudge the reticle."></button>
+      </figure>
+
+      <aside class="detail" id="detail" aria-live="polite">
+        <div class="detail-top">
+          <span class="detail-cat" id="dCat">— · —</span>
+          <span class="detail-lock" id="dLock">NO LOCK</span>
+        </div>
+        <h3 class="detail-name" id="dName">Sweep to acquire a target</h3>
+        <p class="detail-type" id="dType">Move the reticle over the field to lock onto a deep-sky object.</p>
+        <dl class="coords">
+          <div><dt>R.A.</dt><dd id="dRa">—</dd></div>
+          <div><dt>Dec</dt><dd id="dDec">—</dd></div>
+          <div><dt>Alt</dt><dd id="dAlt">—</dd></div>
+          <div><dt>Az</dt><dd id="dAz">—</dd></div>
+          <div><dt>Mag</dt><dd id="dMag">—</dd></div>
+          <div><dt>Size</dt><dd id="dSize">—</dd></div>
+        </dl>
+        <div class="detail-foot">
+          <span class="detail-node" id="dNode">No node assigned</span>
+          <span class="detail-alt" id="dHint">↔ sweep · ↕ nudge</span>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ============ NETWORK — telescope nodes (Pattern A/B object cards) ============ -->
+  <section id="network" class="network">
+    <div class="section-head">
+      <p class="kicker reveal">[ The network ]</p>
+      <h2 class="reveal">Real scopes, dark sites, one shared aperture.</h2>
+      <p class="lede reveal">Every node is a smart telescope owned by a member and pointed by consensus.
+        When a site has clear sky, it publishes its live pointing to the network so anyone can queue a target.</p>
+    </div>
+    <div class="node-grid reveal" id="nodeGrid" role="list" aria-label="Telescope nodes">
+      <noscript><p class="lede">Live node cards load with JavaScript enabled. The network spans dark
+        sites in Chile (Cerro Paranal), Hawaiʻi, the Canary Islands, South Africa (Sutherland), Australia
+        (Warrumbungle) and Scotland (Cairngorms).</p></noscript>
+    </div>
+  </section>
+
+  <!-- ============ OBSERVATIONS — deep-sky gallery (Pattern A) ============ -->
+  <section id="observations" class="observations">
+    <div class="section-head">
+      <p class="kicker reveal">[ Observations ]</p>
+      <h2 class="reveal">Tonight's stack, from the whole network.</h2>
+      <p class="lede reveal">Each frame below is integrated from many nodes shooting the same coordinates —
+        renders are procedural, the metadata is astronomy. Hover a card to read the full acquisition.</p>
+    </div>
+    <div class="obs-grid reveal" id="obsGrid" role="list" aria-label="Deep-sky observations">
+      <noscript><p class="lede">Procedural observation cards load with JavaScript enabled — tonight's
+        stack includes M42 (Orion Nebula), M31 (Andromeda), M45 (Pleiades), M51 (Whirlpool), M27 (Dumbbell)
+        and NGC 7000 (North America Nebula), each with full RA/Dec and acquisition metadata.</p></noscript>
+    </div>
+  </section>
+
+  <!-- ============ SPECS band — animated counters ============ -->
+  <section class="specs">
+    <div class="specs-inner reveal" aria-label="Network at a glance">
+      <div class="spec"><span class="s-num" data-to="1284" data-dec="0">0</span><span class="s-lbl">telescopes online</span></div>
+      <div class="spec"><span class="s-num" data-to="12908" data-dec="0">0</span><span class="s-lbl">objects catalogued</span></div>
+      <div class="spec"><span class="s-num" data-to="2.53" data-dec="2">0</span><span class="s-suf">M ly</span><span class="s-lbl">deepest light reached</span></div>
+      <div class="spec"><span class="s-num" data-to="48300" data-dec="0">0</span><span class="s-lbl">observers, 71 countries</span></div>
+    </div>
+  </section>
+
+  <!-- ============ JOIN — point → focus → share (Pattern C) ============ -->
+  <section id="join" class="join">
+    <div class="section-head">
+      <p class="kicker reveal">[ Join a node ]</p>
+      <h2 class="reveal">Three steps to a sky you share.</h2>
+    </div>
+    <ol class="steps reveal" aria-label="How to join">
+      <li class="step">
+        <span class="step-n">01</span>
+        <h3>Point</h3>
+        <p>Aim any Perigee-ready scope at a dark patch of sky. Rough is fine — you're within a degree, the
+          network does the rest.</p>
+      </li>
+      <li class="step">
+        <span class="step-n">02</span>
+        <h3>Focus</h3>
+        <p>The field plate-solves against 4.8&nbsp;billion catalogued stars, locks your mount, and reports
+          exactly where you're pointed to the arcsecond.</p>
+      </li>
+      <li class="step">
+        <span class="step-n">03</span>
+        <h3>Share</h3>
+        <p>Publish your framing to the node. Everyone watching drops onto your coordinates and the photons
+          stack across the whole network.</p>
+      </li>
+    </ol>
+
+    <form class="invite reveal" id="inviteForm" novalidate>
+      <label class="invite-label" for="inviteEmail">Request an invite to the next open node</label>
+      <div class="invite-row">
+        <input class="invite-input" id="inviteEmail" name="email" type="email" inputmode="email"
+          autocomplete="email" placeholder="you@observatory.earth" aria-describedby="inviteNote" />
+        <button class="btn btn-primary" type="submit">Request access</button>
+      </div>
+      <p class="invite-note" id="inviteNote">Demo only — nothing is sent. Perigee is a design-showcase concept.</p>
+    </form>
+  </section>
+
+  <section class="closer">
+    <p class="closer-line reveal">The sky was always <em>public.</em> We just pointed together.</p>
+  </section>
+</main>
+
+<footer class="footer">
+  <div class="foot-top">
+    <span class="foot-brand">Perigee</span>
+    <div class="foot-links">
+      <a href="#console">Tonight</a><a href="#network">Network</a><a href="#observations">Observations</a><a href="./guide/">Guide</a>
+    </div>
+  </div>
+  <div class="foot-bottom">
+    <span>© 2026 Perigee — a design-showcase concept, not a live telescope network.</span>
+    <span>Designed &amp; built by Fable · <a href="./guide/">How this was built →</a></span>
+  </div>
+</footer>
+
+<script type="module" src="./main.js"></script>
+</body>
+</html>

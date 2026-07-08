@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>How Perigee was built — the guide</title>
+<meta name="description" content="A walkthrough of Perigee's signature technique: a 72k-star three.js deep-space starfield with per-star twinkle and depth parallax, plus the interactive sky console and real horizontal-coordinate math." />
+<meta name="theme-color" content="#05060a" />
+<meta name="color-scheme" content="dark" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;1,6..72,400&family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+:root{--bg:#05060a;--panel:#0c1120;--ink:#e8eefc;--dim:#8f9bb3;--faint:#4a5266;--teal:#43e0c8;--violet:#a99cff;--line:rgba(232,238,252,.10);--max:770px}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font-family:"IBM Plex Sans",system-ui,sans-serif;line-height:1.66;font-weight:300;-webkit-font-smoothing:antialiased}
+.bgn{position:fixed;inset:0;z-index:0;pointer-events:none;background:
+  radial-gradient(60vmax 60vmax at 82% -10%,rgba(67,224,200,.10),transparent 62%),
+  radial-gradient(66vmax 66vmax at -12% 108%,rgba(124,108,255,.12),transparent 62%),
+  radial-gradient(1.3px 1.3px at 20% 30%,rgba(232,238,252,.7),transparent 60%),
+  radial-gradient(1.2px 1.2px at 72% 18%,rgba(232,238,252,.6),transparent 60%),
+  radial-gradient(1.4px 1.4px at 46% 74%,rgba(67,224,200,.6),transparent 60%),
+  radial-gradient(1px 1px at 88% 56%,rgba(180,170,255,.6),transparent 60%)}
+a{color:var(--teal);text-decoration:none}a:hover{text-decoration:underline}
+.wrap{position:relative;z-index:1;max-width:var(--max);margin:0 auto;padding:clamp(28px,6vw,80px) clamp(18px,5vw,32px)}
+.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:3rem;font-family:"IBM Plex Mono",monospace;font-size:.74rem;letter-spacing:.1em;color:var(--dim)}
+.top a{color:var(--dim)}.top a:hover{color:var(--teal)}
+h1{font-family:"Newsreader",serif;font-weight:400;font-size:clamp(2.2rem,6vw,3.7rem);line-height:1.05;margin-bottom:.6rem;letter-spacing:-.015em}
+h1 em{color:var(--teal);font-style:italic}
+.sub{color:var(--dim);font-size:1.12rem;margin-bottom:3.2rem}
+h2{font-family:"Newsreader",serif;font-weight:500;font-size:clamp(1.5rem,3.6vw,2.1rem);margin:2.9rem 0 1rem;letter-spacing:-.01em}
+.ey{font-family:"IBM Plex Mono",monospace;font-size:.7rem;letter-spacing:.22em;text-transform:uppercase;color:var(--violet);display:block;margin-bottom:2.4rem}
+p{color:#c6cfe2;margin:1rem 0}
+strong{color:var(--ink);font-weight:500}
+ul{margin:1rem 0 1rem 1.1rem;color:#c6cfe2}li{margin:.5rem 0}
+pre{background:#080b14;border:1px solid var(--line);border-radius:12px;padding:16px 18px;overflow-x:auto;margin:1.3rem 0;font-family:"IBM Plex Mono",monospace;font-size:.8rem;line-height:1.7;color:#c6cfe2}
+code{font-family:"IBM Plex Mono",monospace;font-size:.86em;color:var(--teal)}
+pre code{color:inherit}
+.rule{height:1px;background:var(--line);margin:3rem 0;border:0}
+.back{display:inline-block;margin-top:2.5rem;font-family:"IBM Plex Mono",monospace;font-size:.8rem}
+.note{color:var(--faint);font-size:.9rem}
+</style>
+</head>
+<body>
+<div class="bgn" aria-hidden="true"></div>
+<div class="wrap">
+  <div class="top">
+    <a href="../">← Perigee</a>
+    <span>THE GUIDE · how it was built</span>
+  </div>
+
+  <span class="ey">Design showcase · build notes</span>
+  <h1>Making a sky you can <em>steer.</em></h1>
+  <p class="sub">Perigee looks like a native observatory console, but it is one HTML file, one stylesheet
+    and one ES module — no framework, no build step. A 72,000-star WebGL field carries the mood; a small
+    2D canvas and some real astronomy carry the interaction.</p>
+
+  <h2>The idea</h2>
+  <p>A telescope network sells one feeling: that the sky is <em>shared</em> — that pointing your scope at a
+    faint smudge lets strangers on three continents watch the same photons land. The site has to make that
+    legible in seconds. So the background isn't a picture of space; it's a real depth field you move through,
+    and the console lets you actually sweep a reticle and lock onto catalogued objects the way an operator
+    would. Everything else — the node grid, the observation stack — is evidence the network is real.</p>
+
+  <h2>The stack</h2>
+  <ul>
+    <li><strong>Plain HTML / CSS / vanilla ES module.</strong> No framework. The page is fundamentally text
+      plus two canvases, so a bundler would only add weight.</li>
+    <li><strong>three.js 0.160</strong> (via an import map, dynamic-imported) for the one heavy thing: the
+      particle starfield. Loaded with <code>import('three')</code> inside a <code>try/catch</code> so a CDN
+      miss never breaks the reveals, console or counters.</li>
+    <li><strong>Newsreader / IBM&nbsp;Plex&nbsp;Sans / IBM&nbsp;Plex&nbsp;Mono</strong> — a literary optical
+      serif for the celestial voice, a neutral grotesque for body, and a mono reserved for coordinates
+      (RA/Dec, Alt/Az, sidereal time) so the numbers read as instrumentation.</li>
+  </ul>
+
+  <h2>Signature technique — the deep-space starfield</h2>
+  <p>The field is a single <code>THREE.Points</code> cloud of ~72k vertices scattered through a deep box
+    volume, drawn with additive blending so overlapping stars bloom. Each star carries its own colour, scale
+    and twinkle phase as buffer attributes:</p>
+  <pre><code>for (let i = 0; i &lt; COUNT; i++) {
+  positions[i*3+0] = (rnd()*2-1) * 1700;
+  positions[i*3+1] = (rnd()*2-1) * 1300;
+  positions[i*3+2] = -1800 + rnd()*2100;      // deep Z → parallax
+  scales[i]  = 0.35 + Math.pow(rnd(), 3) * 2.6; // few big, many tiny
+  phases[i]  = rnd() * Math.PI * 2;             // twinkle offset
+}</code></pre>
+  <p>A tiny <code>ShaderMaterial</code> does the rest on the GPU. Point size falls off with distance (so the
+    volume reads as depth, not a flat sheet), twinkle is a sine of time plus each star's phase, and the
+    fragment shader turns every square point into a soft round glow:</p>
+  <pre><code>// vertex
+float tw = 0.55 + 0.45 * sin(uTime * 1.7 + aPhase);
+float size = uSize * aScale * (0.55 + 0.7*tw) * uPixelRatio
+           * (320.0 / max(-mv.z, 1.0));           // perspective falloff
+gl_PointSize = clamp(size, 0.0, 28.0 * uPixelRatio);
+
+// fragment — round, soft-edged star
+float d = length(gl_PointCoord - vec2(0.5));
+float a = pow(smoothstep(0.5, 0.0, d), 1.7);
+gl_FragColor = vec4(vColor, a * (0.55 + 0.45*vTw));</code></pre>
+  <p>Parallax comes from moving the <em>camera</em>, not the stars: the pointer pans it a little and scroll
+    pushes it down, so near stars slide faster than far ones — genuine depth for free.</p>
+  <pre><code>camera.position.x = pointer.x * 120 + Math.sin(t*0.05) * 24;
+camera.position.y = -pointer.y * 90 - scrollY * 0.06;
+camera.lookAt(0, -scrollY * 0.045, -400);
+points.rotation.z = t * 0.006;                    // slow celestial drift</code></pre>
+
+  <h2>Details that matter</h2>
+  <ul>
+    <li><strong>The Alt/Az is real.</strong> The console computes local sidereal time from the Julian date and
+      runs the actual horizontal-coordinate transform, so an object's altitude and azimuth genuinely change as
+      the night turns:
+      <pre><code>const ha = (lst - raHours) * 15 * DEG;             // hour angle
+const alt = asin(sin(dec)*sin(lat) + cos(dec)*cos(lat)*cos(ha));
+// az from atan2(...) → then "43.2° NW", "BELOW HORIZON", etc.</code></pre></li>
+    <li><strong>No photographs.</strong> Every nebula, galaxy and cluster is drawn from layered SVG radial
+      gradients, an <code>feTurbulence</code> cloud, and seeded star scatter — procedural, palette-locked, zero image bytes.</li>
+    <li><strong>Two independent rAF loops, both polite.</strong> The WebGL field and the 2D console each pause
+      on <code>visibilitychange</code>; the console also pauses when scrolled out of view via
+      <code>IntersectionObserver</code>. Device-pixel-ratio is capped at 2.</li>
+    <li><strong>Progressive enhancement + reduced motion.</strong> Feature-detect WebGL; if it's missing —
+      or the visitor prefers reduced motion — the starfield never initialises and a layered CSS radial-gradient
+      field shows instead. Reveals, twinkle and smooth-scroll all fall back to static.</li>
+  </ul>
+
+  <h2>Ship it on GitHub Pages</h2>
+  <p>Every path is relative and there is no build, so deploying is three commands:</p>
+  <pre><code>gh repo create perigee-astro --public --source . --push
+gh api --method POST /repos/USER/perigee-astro/pages \
+  -f 'source[branch]=main' -f 'source[path]=/'
+# live at https://USER.github.io/perigee-astro/ in ~1 min</code></pre>
+  <p>A <code>.nojekyll</code> file keeps Pages from touching the folder structure. That's the whole deploy.</p>
+
+  <hr class="rule" />
+  <p class="note">Perigee is a design-showcase concept — there is no real telescope network, backend or live
+    imagery behind it. See the repository README for the full demo-vs-real map.</p>
+  <a class="back" href="../">← Back to Perigee</a>
+</div>
+</body>
+</html>
