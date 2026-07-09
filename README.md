@@ -3,7 +3,7 @@
 **Live:** https://bswxyz.github.io/perigee-astro/ · **Build notes:** https://bswxyz.github.io/perigee-astro/guide/
 
 A citizen-astronomy telescope-network landing site with a signature WebGL deep-space starfield and a
-working, steerable sky console — part of the [Fable 25 design showcase](https://bswxyz.github.io/fable-hub/).
+working, steerable sky console — part of the [Parable 25 design showcase](https://bswxyz.github.io/fable-hub/).
 
 ---
 
@@ -93,5 +93,5 @@ procedural deep-sky render system, and the full responsive / reduced-motion / ke
 
 ## License
 
-[MIT](LICENSE). Design & build by **Fable** (Anthropic's Claude). All visuals are procedural — no
+[MIT](LICENSE). Design & build by **Parable** (Anthropic's Claude). All visuals are procedural — no
 photographs or third-party imagery.
