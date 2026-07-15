@@ -1,9 +1,41 @@
-# Perigee
+<!-- parable:beautified -->
+<div align="center">
 
-**Live:** https://bswxyz.github.io/perigee-astro/ · **Build notes:** https://bswxyz.github.io/perigee-astro/guide/
+<h1>Perigee</h1>
+
+<p><strong>Citizen-astronomy network — a 72k-star shader field + live sky console.</strong></p>
+
+<p>
+  <a href="https://bswxyz.github.io/perigee-astro/"><img alt="Live demo" src="https://img.shields.io/badge/demo-live-8b5cf6?style=flat-square&labelColor=1a1a1a"></a>
+  <img alt="Family" src="https://img.shields.io/badge/family-Parable-ec4899?style=flat-square&labelColor=1a1a1a">
+  <img alt="Stack" src="https://img.shields.io/badge/stack-HTML%2FJS-f5a623?style=flat-square&labelColor=1a1a1a">
+  <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/license-MIT-22c55e?style=flat-square&labelColor=1a1a1a"></a>
+</p>
+
+<p>
+  <a href="https://bswxyz.github.io/perigee-astro/"><b>Live demo</b></a>
+  &nbsp;·&nbsp;
+  <a href="https://bswxyz.github.io/perigee-astro/guide/">Build notes</a>
+  &nbsp;·&nbsp;
+  <a href="https://parable-three.vercel.app/templates">More templates</a>
+</p>
+
+<a href="https://bswxyz.github.io/perigee-astro/">
+  <img src=".github/preview.jpg" alt="Perigee — live preview" width="100%">
+</a>
+
+</div>
+
+**Use this template** — copy the source into a new project:
+
+```bash
+npx degit bswxyz/perigee-astro my-app
+```
+
+
 
 A citizen-astronomy telescope-network landing site with a signature WebGL deep-space starfield and a
-working, steerable sky console — part of the [Parable 25 design showcase](https://bswxyz.github.io/fable-hub/).
+working, steerable sky console — part of the [Parable 25 design showcase](https://parable-three.vercel.app).
 
 ---
 
@@ -93,5 +125,5 @@ procedural deep-sky render system, and the full responsive / reduced-motion / ke
 
 ## License
 
-[MIT](LICENSE). Design & build by **Parable** (Anthropic's Claude). All visuals are procedural — no
+[MIT](LICENSE). Design & build by **Parable**. All visuals are procedural — no
 photographs or third-party imagery.
